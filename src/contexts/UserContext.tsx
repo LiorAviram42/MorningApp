@@ -37,7 +37,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let unsubscribeAuth: (() => void) | undefined;
     let unsubscribeProfile: (() => void) | undefined;
 
-    const init = async () => {
+    const init = async (forceLoad = false) => {
       // Check for guest mode first
       const guestFamilyId = localStorage.getItem('guest_family_id');
       const guestRole = localStorage.getItem('guest_role') as 'parent' | 'child' | null;
@@ -45,41 +45,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (guestFamilyId && guestRole) {
         setProfile({ familyId: guestFamilyId, role: guestRole });
         setAuthReady(true);
-        // We don't initialize Firebase Auth in guest mode to avoid Family Link blocks
         return;
       }
 
-      // Check if we have a saved Firebase session or if a login was just requested
-      const hasSavedSession = Object.keys(localStorage).some(key => key.startsWith('firebase:authUser'));
-      const loginRequested = localStorage.getItem('auth_loading_requested') === 'true';
+      // Check if we have a saved Firebase session - be more inclusive with key names
+      const hasSavedSession = Object.keys(localStorage).some(key => 
+        key.toLowerCase().includes('firebase:authuser') || 
+        key.toLowerCase().includes('firebase:auth')
+      );
       
-      if (!hasSavedSession && !loginRequested) {
-        // No saved session and no login requested, stay in "logged out" state without loading Auth library
+      if (!hasSavedSession && !forceLoad) {
         setAuthReady(true);
         return;
       }
 
+      // If we are loading auth, make sure we aren't marked as "ready" with a null user
+      setAuthReady(false);
       setIsAuthLoading(true);
-      // Only listen to auth if we're not in guest mode and have a reason to (saved session)
       try {
-        const { onAuthStateChanged, getRedirectResult } = await import('firebase/auth');
+        const { onAuthStateChanged } = await import('firebase/auth');
         const auth = await getAuthInstance();
-        
-        // Handle redirect result
-        try {
-          const result = await getRedirectResult(auth);
-          if (result) {
-            console.log("Redirect login successful");
-          }
-          localStorage.removeItem('auth_loading_requested');
-        } catch (redirectError: any) {
-          console.error("Error handling redirect result:", redirectError);
-          localStorage.removeItem('auth_loading_requested');
-          setAuthError(redirectError.message);
-          if (redirectError.code === 'auth/unauthorized-domain') {
-            alert(`שגיאה: הדומיין ${window.location.hostname} לא מאושר ב-Firebase. אנא הוסף אותו ב-Authorized domains.`);
-          }
-        }
         
         unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
           setUser(currentUser);
@@ -88,7 +73,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (currentUser) {
             const userDocRef = doc(db, 'users', currentUser.uid);
             
-            // First check if profile exists, if not create it
             try {
               const docSnap = await getDoc(userDocRef);
               if (!docSnap.exists()) {
@@ -102,7 +86,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error("Error ensuring user profile exists:", err);
             }
 
-            // Now listen to profile changes
             unsubscribeProfile = onSnapshot(userDocRef, (snapshot) => {
               if (snapshot.exists()) {
                 setProfile(snapshot.data() as UserProfile);
@@ -127,9 +110,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    const handleTrigger = () => {
+      console.log("Auth trigger received, loading Firebase Auth...");
+      init(true);
+    };
+
+    window.addEventListener('firebase-auth-trigger', handleTrigger);
     init();
 
     return () => {
+      window.removeEventListener('firebase-auth-trigger', handleTrigger);
       if (unsubscribeAuth) unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
     };

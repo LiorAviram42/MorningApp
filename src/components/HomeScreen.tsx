@@ -199,6 +199,7 @@ export default function HomeScreen({ onSelectKid }: Props) {
             {!showCodeLogin ? (
               <>
                 <button 
+                  type="button"
                   onClick={() => {
                     if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(5);
                     sounds.playSelect();

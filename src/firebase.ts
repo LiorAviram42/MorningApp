@@ -20,10 +20,10 @@ export const getAuthInstance = async () => {
 
 export const loginWithGoogle = async () => {
   try {
-    // Mark that we are intentionally loading auth to allow the library to load
-    localStorage.setItem('auth_loading_requested', 'true');
+    // Trigger auth loading in the context before starting the popup
+    window.dispatchEvent(new CustomEvent('firebase-auth-trigger'));
     
-    const { GoogleAuthProvider, signInWithRedirect, setPersistence, browserLocalPersistence } = await import('firebase/auth');
+    const { GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } = await import('firebase/auth');
     const auth = await getAuthInstance();
     
     await setPersistence(auth, browserLocalPersistence);
@@ -31,13 +31,13 @@ export const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
-    await signInWithRedirect(auth, provider);
+    await signInWithPopup(auth, provider);
+    // No reload needed, the listener in UserContext will pick it up
   } catch (error: any) {
-    localStorage.removeItem('auth_loading_requested');
     console.error("Login error:", error);
     if (error.code === 'auth/unauthorized-domain') {
-      alert(`שגיאה: הדומיין ${window.location.hostname} לא מאושר ב-Firebase.`);
-    } else {
+      alert(`שגיאה: הדומיין ${window.location.hostname} לא מאושר ב-Firebase. אנא הוסף אותו ב-Authorized domains ב-Firebase Console.`);
+    } else if (error.code !== 'auth/popup-closed-by-user') {
       alert(`שגיאת התחברות: ${error.message}`);
     }
   }

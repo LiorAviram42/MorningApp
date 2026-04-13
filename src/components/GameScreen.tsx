@@ -8,6 +8,19 @@ import { db } from '../firebase';
 import { Home, Plus, Minus } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 
+import charYuvaliBefore from '/character_yuvali_before.png';
+import charYuvaliAfter from '/character_yuvali_after.png';
+import charMaayaniBefore from '/character_maayani_before.png';
+import charMaayaniAfter from '/character_maayani_after.png';
+import charPalgiBefore from '/character_palgi_before.png';
+import charPalgiAfter from '/character_palgi_after.png';
+
+const CHARACTERS: Record<string, { before: string, after: string }> = {
+  yuvali: { before: charYuvaliBefore, after: charYuvaliAfter },
+  maayani: { before: charMaayaniBefore, after: charMaayaniAfter },
+  palgi: { before: charPalgiBefore, after: charPalgiAfter }
+};
+
 interface Props {
   kidId: KidId;
   onBack: () => void;
@@ -190,7 +203,7 @@ export default function GameScreen({ kidId, onBack }: Props) {
     }
   };
 
-  const characterImg = isAllCompleted ? `/character_${kidId}_after.png` : `/character_${kidId}_before.png`;
+  const characterImg = isAllCompleted ? CHARACTERS[kidId].after : CHARACTERS[kidId].before;
 
   return (
     <div className="flex flex-col h-full w-full p-[15px] box-border relative overflow-hidden safe-area-inset">
