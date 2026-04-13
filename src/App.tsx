@@ -21,6 +21,8 @@ function AppContent() {
   const { user, profile, authReady } = useUser();
 
   useEffect(() => {
+    console.log("App initialized, authReady:", authReady, "screen:", screen);
+    
     if (!window.history.state) {
       window.history.replaceState({ screen: 'splash' }, '');
     }
@@ -76,6 +78,7 @@ function AppContent() {
   }, [user, authReady]);
 
   const handleSplashFinish = () => {
+    console.log("Splash finished, moving to home");
     setScreen('home');
     window.history.replaceState({ screen: 'home' }, '');
   };
