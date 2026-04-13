@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SplashScreen from './components/SplashScreen';
 import HomeScreen from './components/HomeScreen';
 import GameScreen from './components/GameScreen';
@@ -43,6 +43,17 @@ function AppContent() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Safety timer: If we're still on splash after 6 seconds, force home
+  useEffect(() => {
+    if (screen === 'splash') {
+      const timer = setTimeout(() => {
+        console.log("Safety timer triggered: forcing home screen");
+        setScreen('home');
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [screen]);
+
   useEffect(() => {
     const checkDailyReset = async () => {
       const today = new Date().toDateString();
@@ -77,21 +88,21 @@ function AppContent() {
     }
   }, [user, authReady]);
 
-  const handleSplashFinish = () => {
+  const handleSplashFinish = useCallback(() => {
     console.log("Splash finished, moving to home");
     setScreen('home');
     window.history.replaceState({ screen: 'home' }, '');
-  };
+  }, []);
 
-  const handleKidSelect = (kidId: KidId) => {
+  const handleKidSelect = useCallback((kidId: KidId) => {
     setSelectedKid(kidId);
     setScreen('game');
     window.history.pushState({ screen: 'game', kidId }, '');
-  };
+  }, []);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     window.history.back();
-  };
+  }, []);
 
   useEffect(() => {
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
