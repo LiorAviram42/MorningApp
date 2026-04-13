@@ -106,8 +106,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             unsubscribeProfile = onSnapshot(userDocRef, (snapshot) => {
               if (snapshot.exists()) {
                 setProfile(snapshot.data() as UserProfile);
-                setAuthReady(true);
+              } else {
+                setProfile(null);
               }
+              setAuthReady(true);
             }, (error) => {
               console.error("Error fetching user profile:", error);
               setAuthReady(true);

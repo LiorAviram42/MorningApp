@@ -109,6 +109,12 @@ function AppContent() {
       style={backgroundStyle}
     >
       {screen === 'splash' && <SplashScreen onFinish={handleSplashFinish} />}
+      {screen === 'home' && !authReady && (
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <div className="w-10 h-10 border-4 border-[#333] border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm font-bold text-[#333]">טוען...</span>
+        </div>
+      )}
       {screen === 'home' && authReady && <HomeScreen onSelectKid={handleKidSelect} hasMagicBg={false} />}
       {screen === 'game' && selectedKid && authReady && (
         <GameScreen kidId={selectedKid} onBack={handleBack} />
