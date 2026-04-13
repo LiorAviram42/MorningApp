@@ -13,6 +13,7 @@ import { db } from './firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { KIDS } from './constants';
 import { UserProvider, useUser } from './contexts/UserContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
   const [screen, setScreen] = useState<'splash' | 'home' | 'game'>('splash');
@@ -126,8 +127,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
+    <ErrorBoundary>
+      <UserProvider>
+        <AppContent />
+      </UserProvider>
+    </ErrorBoundary>
   );
 }
